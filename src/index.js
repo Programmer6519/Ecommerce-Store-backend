@@ -6,6 +6,6 @@ import { connectDB } from "./config/db.js";
 
 connectDB();
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server is listeneing to port ${process.env.PORT}`);
-});
+// app.listen(process.env.PORT, () => {
+//   console.log(`Server is listeneing to port ${process.env.PORT}`);
+// });

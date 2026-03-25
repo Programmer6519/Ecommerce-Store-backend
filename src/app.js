@@ -4,11 +4,13 @@ import { productRouter } from "./routes/product_routes.js";
 import { reviewRouter } from "./routes/review_routes.js";
 import { storeRouter } from "./routes/store_routes.js";
 import { orderRouter } from "./routes/order_routes.js";
+import { connectDB } from "./config/db.js";
 import { adminRouter } from "./routes/admin_routes.js";
 import { userRouter } from "./routes/user_routes.js";
 
 import express from "express";
 
+await connectDB();
 const app = express();
 
 app.use(express.json());
