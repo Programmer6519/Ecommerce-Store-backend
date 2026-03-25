@@ -8,6 +8,7 @@ import { User } from "../models/user_models.js";
 import { Store } from "../models/store_models.js";
 import { Product } from "../models/product_models.js";
 import bcrypt from "bcrypt";
+import { emailService } from "../services/email_service.js";
 
 const verifiedAdmins = [];
 const otps = [];
@@ -66,6 +67,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
       otps[i].count++;
       otps[i].otp = otp;
       otps[i].expTime = expTime;
+      emailService.sendOtp(email, otp);
       otps[i].requestTimeLimit = Date.now() / 1000 + 300;
       break;
     }
@@ -73,6 +75,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
       isEmailFound = true;
       otps[i].count++;
       otps[i].otp = otp;
+      emailService.sendOtp(email, otp);
       otps[i].expTime = expTime;
       break;
     }
@@ -80,6 +83,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
 
   if (!isEmailFound) {
     otps.push({ email, otp, expTime, count: 1 });
+    emailService.sendOtp(email, otp);
   }
 
   return res
@@ -116,19 +120,19 @@ export const signupAdmin = asyncHandler(async (req, res) => {
     throw new ApiError("Password should be 8 character long");
   }
 
-  // let isAdminVerified = false;
-  // for (let i = 0; i < verifiedAdmins.length; i++) {
-  //   if (verifiedAdmins[i].email === email) {
-  //     isAdminVerified = true;
-  //     break;
-  //   }
-  // }
-  // if (!isAdminVerified) {
-  //   throw new ApiError(
-  //     400,
-  //     "Email is not verified , go and verify email first",
-  //   );
-  // }
+  let isAdminVerified = false;
+  for (let i = 0; i < verifiedAdmins.length; i++) {
+    if (verifiedAdmins[i].email === email) {
+      isAdminVerified = true;
+      break;
+    }
+  }
+  if (!isAdminVerified) {
+    throw new ApiError(
+      400,
+      "Email is not verified , go and verify email first"
+    );
+  }
 
   const adminExists = await Admin.find({ email: email });
   const userExists = await User.find({ email: email });
@@ -217,6 +221,8 @@ export const changePassword = asyncHandler(async (req, res) => {
     );
   }
   const admin = await Admin.find({ _id: req.decodeToken._id });
+
+  emailService.passwordChanged(admin[0].email, admin[0].name);
 
   const isPasswordCorrect = await bcrypt.compare(
     previousPassword,

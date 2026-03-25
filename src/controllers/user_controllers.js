@@ -119,20 +119,20 @@ export const signupUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Password should be 8 character long");
   }
 
-  // let isUserVerified = false;
-  // for (let i = 0; i < verifiedEmails.length; i++) {
-  //   if (verifiedEmails[i].email === email) {
-  //     isUserVerified = true;
-  //     break;
-  //   }
-  // }
+  let isUserVerified = false;
+  for (let i = 0; i < verifiedEmails.length; i++) {
+    if (verifiedEmails[i].email === email) {
+      isUserVerified = true;
+      break;
+    }
+  }
 
-  // if (!isUserVerified) {
-  //   throw new ApiError(
-  //     400,
-  //     "Email is not verified , go and verify email first"
-  //   );
-  // }
+  if (!isUserVerified) {
+    throw new ApiError(
+      400,
+      "Email is not verified , go and verify email first"
+    );
+  }
 
   const userExists = await User.find({ email: email });
 
