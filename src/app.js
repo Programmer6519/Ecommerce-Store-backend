@@ -10,7 +10,7 @@ import { userRouter } from "./routes/user_routes.js";
 
 import express from "express";
 
-await connectDB();
+connectDB();
 const app = express();
 
 app.use(express.json());
