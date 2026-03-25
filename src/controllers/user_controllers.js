@@ -64,7 +64,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
       otps[i].count++;
       otps[i].otp = otp;
       otps[i].expTime = expTime;
-      emailService.sendOtp(email, otp);
+      await emailService.sendOtp(email, otp);
       otps[i].requestTimeLimit = Date.now() / 1000 + 300;
 
       break;
@@ -74,7 +74,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
       otps[i].count++;
       otps[i].otp = otp;
       otps[i].expTime = expTime;
-      emailService.sendOtp(email, otp);
+      await emailService.sendOtp(email, otp);
 
       break;
     }
@@ -82,7 +82,7 @@ export const sendOtp = asyncHandler(async (req, res) => {
 
   if (!isEmailFound) {
     otps.push({ email, otp, expTime, count: 1 });
-    emailService.sendOtp(email, otp);
+    await emailService.sendOtp(email, otp);
   }
 
   return res
