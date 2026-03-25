@@ -4,23 +4,20 @@ import { productRouter } from "./routes/product_routes.js";
 import { reviewRouter } from "./routes/review_routes.js";
 import { storeRouter } from "./routes/store_routes.js";
 import { orderRouter } from "./routes/order_routes.js";
-import { connectDB } from "./config/db.js";
 import { adminRouter } from "./routes/admin_routes.js";
 import { userRouter } from "./routes/user_routes.js";
 
 import express from "express";
 
-connectDB();
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use(express.static("../public/temp"));
-
-app.get("/", (req, res) => {
-  res.send("Hello world!");
+app.use("/", (req, res) => {
+  res.send("HELLO THE SERVER IS RUNNING");
 });
-
 app.use("/api/v1/product", verifyJWT, productRouter);
 app.use("/api/v1/review", verifyJWT, reviewRouter);
 app.use("/api/v1/store", verifyJWT, storeRouter);
