@@ -10,6 +10,10 @@ const reviewSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    writtenTo: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
     content: {
       type: String,
       required: true,
@@ -21,7 +25,7 @@ const reviewSchema = new Schema(
       max: 5,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 export const Review = mongoose.model("Review", reviewSchema);

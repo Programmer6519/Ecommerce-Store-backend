@@ -10,7 +10,7 @@ import { isOwner } from "../middlewares/isOwner.js";
 const orderRouter = Router();
 
 orderRouter.post("/create", createOrder);
-orderRouter.get("/get", getOrder);
+orderRouter.get("/get", isOwner, getOrder);
 orderRouter.put("/update", updateOrder);
 orderRouter.delete("/delete", deleteOrder);
 

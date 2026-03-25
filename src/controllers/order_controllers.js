@@ -4,6 +4,8 @@ import { Product } from "../models/product_models.js";
 import { Order } from "../models/order_models.js";
 import { Store } from "../models/store_models.js";
 import { ApiError } from "../utils/ApiError.js";
+import { User } from "../models/user_models.js";
+import { emailService } from "../services/email_service.js";
 
 export const createOrder = asyncHandler(async (req, res) => {
   const { storeId, productId, quantity } = req.body;
@@ -46,63 +48,80 @@ export const createOrder = asyncHandler(async (req, res) => {
 
   product[0].stock -= quantity;
 
+  emailService.orderConfirmed(
+    req.email,
+    order._id,
+    product[0].price * quantity
+  );
+
   await product[0].save();
 
   return res.json(new ApiResponse(200, "Successfully placed Order", { order }));
 });
 
 export const getOrder = asyncHandler(async (req, res) => {
-  const { storeId, productId, orderId } = req.body;
+  const { storeId, orderId, page, limit } = req.body;
 
-  if (!storeId || !productId) {
+  if (req.role !== "seller") {
+    throw new ApiError(401, "Unauthorized request");
+  }
+  if (!storeId) {
     throw new ApiError(400, "All ids are required");
   }
 
-  const query = { userId: req.decodeToken._id };
+  if (!orderId && (page < 0 || !page || limit < 0 || !limit)) {
+    throw new ApiError(400, "page and limit is required");
+  }
+  const query = { storeId };
 
   if (orderId) {
     query._id = orderId;
   }
 
-  const order = await Order.find(query);
+  const order = await Order.find(query)
+    .skip((page - 1) * limit)
+    .limit(limit);
 
-  // if (!order[0]) {
-  //   throw new ApiError(400, "order not found");
-  // }
+  if (orderId && !order[0]) {
+    throw new ApiError(400, "Invalid order Id");
+  }
 
   return res.json(new ApiResponse(200, "got orders successfullly", { order }));
 });
 
 export const updateOrder = asyncHandler(async (req, res) => {
-  const { orderId, quantity, status } = req.body;
-  if (quantity < 1) {
-    throw new ApiError(400, "quantity should be atleast one");
-  }
+  const { orderId, status } = req.body;
 
-  if (!orderId) {
-    throw new ApiError(400, "order id is required");
-  }
-
-  if (!quantity && !status) {
-    throw new ApiError(400, "At least one field is required for updating");
+  if (!orderId || !status) {
+    throw new ApiError(400, "all fields are required");
   }
 
   const order = await Order.find({ _id: orderId });
   if (!order[0]) {
     throw new ApiError(400, "order id is invalid");
   }
+
+  const store = await Store.find({ _id: order[0].storeId });
+
+  if (store[0].ownerId != req.decodeToken._id) {
+    throw new ApiError(400, "Unauthorized request");
+  }
+
   if (status === "delivered") {
     order[0].deliveryTime =
       Date.now() / 1000 - new Date(order[0].createdAt) / 1000;
   }
 
-  order[0].quantity = quantity ?? order[0].quantity;
   order[0].status = status ?? order[0].status;
 
   await order[0].save();
 
+  const user = await User.find({ _id: order[0].userId });
+
+  emailService.orderChanged(user[0].email, user[0].name, orderId, status);
+
   return res.json(
-    new ApiResponse(200, "Order updated successfully", { order: order[0] }),
+    new ApiResponse(200, "Order updated successfully", { order: order[0] })
   );
 });
 

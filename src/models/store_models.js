@@ -43,7 +43,7 @@ const storeSchema = new Schema(
       default: 0,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 storeSchema.pre("save", async function () {
@@ -58,13 +58,13 @@ storeSchema.pre("save", async function () {
       totalReviews += products[i].numberOfReviews;
     }
   }
-
   avgRating /= productsCount;
   this.rating = avgRating;
   this.totalProducts = products.length;
-  const orders = await Order.find({ storeId: this._id });
+  // const orders = await Order.l
+  const orders = await Order.countDocuments({ storeId: this._id });
   this.totalSales = await orders.length;
-  this.reviewCount = totalReviews.toFixed(1);
+  this.reviewCount = totalReviews.toFixed(3);
 });
 
 export const Store = mongoose.model("Store", storeSchema);

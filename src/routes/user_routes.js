@@ -3,6 +3,8 @@ import { verifyJWT } from "../middlewares/auth_middleware.js";
 
 import {
   changePassword,
+  getMyOrders,
+  getMyReviews,
   loginUser,
   sendOtp,
   signupUser,
@@ -16,5 +18,7 @@ userRouter.post("/verify_otp", verifyOtp);
 userRouter.post("/signup", signupUser);
 userRouter.post("/login", loginUser);
 userRouter.post("/change_password", verifyJWT, changePassword);
+userRouter.get("/get_orders", verifyJWT, getMyOrders);
+userRouter.get("/get_reviews", verifyJWT, getMyReviews);
 
 export { userRouter };

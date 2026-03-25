@@ -3,7 +3,9 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user_models.js";
 import bcrypt from "bcrypt";
-import { Dashboard } from "../models/admin_dashboard_models.js";
+import { Order } from "../models/order_models.js";
+import { Review } from "../models/review_models.js";
+import { emailService } from "../services/email_service.js";
 
 const verifiedEmails = [];
 const otps = [];
@@ -62,7 +64,9 @@ export const sendOtp = asyncHandler(async (req, res) => {
       otps[i].count++;
       otps[i].otp = otp;
       otps[i].expTime = expTime;
+      emailService.sendOtp(email, otp);
       otps[i].requestTimeLimit = Date.now() / 1000 + 300;
+
       break;
     }
     if (otps[i].email === email) {
@@ -70,12 +74,15 @@ export const sendOtp = asyncHandler(async (req, res) => {
       otps[i].count++;
       otps[i].otp = otp;
       otps[i].expTime = expTime;
+      emailService.sendOtp(email, otp);
+
       break;
     }
   }
 
   if (!isEmailFound) {
     otps.push({ email, otp, expTime, count: 1 });
+    emailService.sendOtp(email, otp);
   }
 
   return res
@@ -108,18 +115,22 @@ export const signupUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
+  if (password.length < 8) {
+    throw new ApiError(400, "Password should be 8 character long");
+  }
+
   // let isUserVerified = false;
   // for (let i = 0; i < verifiedEmails.length; i++) {
   //   if (verifiedEmails[i].email === email) {
-  //     isAdminVerified = true;
+  //     isUserVerified = true;
   //     break;
   //   }
   // }
 
-  // if (isAdminVerified) {
+  // if (!isUserVerified) {
   //   throw new ApiError(
   //     400,
-  //     "Email is not verified , go and verify email first",
+  //     "Email is not verified , go and verify email first"
   //   );
   // }
 
@@ -149,10 +160,10 @@ export const signupUser = asyncHandler(async (req, res) => {
 
   return res.json(
     new ApiResponse(200, "User created successfully", {
-      resUser,
+      user: resUser,
       accessToken,
       refreshToken,
-    }),
+    })
   );
 });
 
@@ -185,10 +196,10 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   return res.json(
     new ApiResponse(200, "User logged In successfully", {
-      resUser,
+      user: resUser,
       accessToken,
       refreshToken,
-    }),
+    })
   );
 });
 
@@ -202,10 +213,17 @@ export const changePassword = asyncHandler(async (req, res) => {
 
   const isPasswordCorrect = await bcrypt.compare(
     previousPassword,
-    user[0].password,
+    user[0].password
   );
+  if (newPassword.length < 8) {
+    throw new ApiError(400, "Password should be 8 character long");
+  }
   if (newPassword !== confirmPassword) {
     throw new ApiError(400, "New passwords don't match");
+  }
+
+  if (newPassword === previousPassword) {
+    throw new ApiError(400, "New password should be different than previous");
   }
 
   if (!isPasswordCorrect) {
@@ -218,7 +236,26 @@ export const changePassword = asyncHandler(async (req, res) => {
 
   delete resUser.refreshToken;
   delete resUser.password;
+
+  emailService.passwordChanged(user[0].email, user[0].name);
+
   return res.json(
-    new ApiResponse(200, "Password Changed successfully", { resUser }),
+    new ApiResponse(200, "Password Changed successfully", { user: resUser })
+  );
+});
+
+export const getMyOrders = asyncHandler(async (req, res) => {
+  const orders = await Order.find({ userId: req.decodeToken._id });
+
+  return res.json(
+    new ApiResponse(200, "Successfully got all orders", { orders })
+  );
+});
+
+export const getMyReviews = asyncHandler(async (req, res) => {
+  const reviews = await Review.find({ userId: req.decodeToken._id });
+
+  return res.json(
+    new ApiResponse(200, "Successfully got all reviews", { reviews })
   );
 });

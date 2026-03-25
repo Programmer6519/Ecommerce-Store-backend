@@ -111,6 +111,11 @@ export const signupAdmin = asyncHandler(async (req, res) => {
   if (!name || !password) {
     throw new ApiError(400, "All fields are required");
   }
+
+  if (password.length < 8) {
+    throw new ApiError("Password should be 8 character long");
+  }
+
   // let isAdminVerified = false;
   // for (let i = 0; i < verifiedAdmins.length; i++) {
   //   if (verifiedAdmins[i].email === email) {
@@ -118,7 +123,7 @@ export const signupAdmin = asyncHandler(async (req, res) => {
   //     break;
   //   }
   // }
-  // if (isAdminVerified) {
+  // if (!isAdminVerified) {
   //   throw new ApiError(
   //     400,
   //     "Email is not verified , go and verify email first",
@@ -153,10 +158,10 @@ export const signupAdmin = asyncHandler(async (req, res) => {
 
   return res.json(
     new ApiResponse(200, "Admin created successfully", {
-      resAdmin,
+      admin: resAdmin,
       accessToken,
       refreshToken,
-    }),
+    })
   );
 });
 
@@ -189,10 +194,10 @@ export const loginAdmin = asyncHandler(async (req, res) => {
 
   return res.json(
     new ApiResponse(200, "admin logged In successfully", {
-      resAdmin,
+      admin: resAdmin,
       accessToken,
       refreshToken,
-    }),
+    })
   );
 });
 
@@ -201,11 +206,21 @@ export const changePassword = asyncHandler(async (req, res) => {
   if (!previousPassword || !newPassword || !confirmPassword) {
     throw new ApiError(400, "All fields are required!");
   }
+
+  if (newPassword.length < 8) {
+    throw new ApiError("Password should be 8 character long");
+  }
+
+  if (previousPassword === newPassword) {
+    throw new ApiError(
+      "new password should be different from previous password"
+    );
+  }
   const admin = await Admin.find({ _id: req.decodeToken._id });
 
   const isPasswordCorrect = await bcrypt.compare(
     previousPassword,
-    admin[0].password,
+    admin[0].password
   );
   if (newPassword !== confirmPassword) {
     throw new ApiError(400, "New passwords don't match");
@@ -222,7 +237,7 @@ export const changePassword = asyncHandler(async (req, res) => {
   delete resAdmin.refreshToken;
   delete resAdmin.password;
   return res.json(
-    new ApiResponse(200, "Password Changed successfully", { resAdmin }),
+    new ApiResponse(200, "Password Changed successfully", { admin: resAdmin })
   );
 });
 
@@ -240,7 +255,7 @@ export const adminDashboard = asyncHandler(async (req, res) => {
       totalSeller: seller,
       totalOrders: order,
       totalReview: review,
-    }),
+    })
   );
 });
 
@@ -269,50 +284,59 @@ export const singleSellerStats = asyncHandler(async (req, res) => {
       totalProducts: product,
       totalReviews: reviewCount,
       rating,
-      avgDeliveryTime: avgTime,
+      avgDeliveryTime: avgTime.toFixed(3),
       totalReturns: returns,
-    }),
+    })
   );
 });
 
 export const adminUserList = asyncHandler(async (req, res) => {
-  const { pageNumber } = req.body;
+  const { page, limit } = req.body;
 
+  if (page < 0 || !page || limit < 0 || !limit) {
+    throw new ApiError(400, "Invalid page or limit");
+  }
   const users = await User.find({})
-    .skip((pageNumber - 1) * 10)
-    .limit(10);
+    .skip((page - 1) * limit)
+    .limit(limit);
 
   return res.json(new ApiResponse(200, "Successfully got users", { users }));
 });
 
 export const adminByuerList = asyncHandler(async (req, res) => {
-  const { pageNumber } = req.body;
-
+  const { page, limit } = req.body;
+  if (page < 0 || !page || limit < 0 || !limit) {
+    throw new ApiError(400, "Invalid page or limit");
+  }
   const buyers = await User.find({ role: "buyer" })
-    .skip((pageNumber - 1) * 10)
-    .limit(10);
+    .skip((page - 1) * limit)
+    .limit(limit);
 
   return res.json(new ApiResponse(200, "Successfully got buyers", { buyers }));
 });
 
 export const adminSellerList = asyncHandler(async (req, res) => {
-  const { pageNumber } = req.body;
-
+  const { page, limit } = req.body;
+  if (page < 0 || !page || limit < 0 || !limit) {
+    throw new ApiError(400, "Invalid page or limit");
+  }
   const sellers = await User.find({ role: "seller" })
-    .skip((pageNumber - 1) * 10)
-    .limit(10);
+    .skip((page - 1) * limit)
+    .limit(limit);
 
   return res.json(
-    new ApiResponse(200, "Successfully got sellers", { sellers }),
+    new ApiResponse(200, "Successfully got sellers", { sellers })
   );
 });
 
 export const adminOrderList = asyncHandler(async (req, res) => {
-  const { pageNumber } = req.body;
-
+  const { page, limit } = req.body;
+  if (page < 0 || !page || limit < 0 || !limit) {
+    throw new ApiError(400, "Invalid page or limit");
+  }
   const orders = await Order.find({})
-    .skip((pageNumber - 1) * 10)
-    .limit(10);
+    .skip((page - 1) * limit)
+    .limit(limit);
 
   return res.json(new ApiResponse(200, "Successfully got orders", { orders }));
 });

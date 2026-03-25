@@ -25,6 +25,7 @@ export const createReview = asyncHandler(async (req, res) => {
   const review = await Review.create({
     productId,
     userId: req.decodeToken._id,
+    writtenTo: product[0].ownerId,
     content,
     rating,
   });
@@ -38,17 +39,19 @@ export const createReview = asyncHandler(async (req, res) => {
   await store[0].save();
 
   return res.json(
-    new ApiResponse(200, "Review created successfully", { review }),
+    new ApiResponse(200, "Review created successfully", { review })
   );
 });
 
 export const getReview = asyncHandler(async (req, res) => {
-  const { productId, reviewId } = req.body;
+  const { productId, reviewId, page, limit } = req.body;
 
   if (!productId) {
     throw new ApiError(400, "Product Id is required");
   }
-
+  if (!reviewId && (page < 0 || !page || limit < 0 || !limit)) {
+    throw new ApiError(400, "page and limit is required");
+  }
   const product = await Product.find({ _id: productId });
 
   if (!product[0]) {
@@ -59,10 +62,16 @@ export const getReview = asyncHandler(async (req, res) => {
     query._id = reviewId;
   }
 
-  const reviews = await Review.find(query);
+  const reviews = await Review.find(query)
+    .skip((page - 1) * limit)
+    .limit(limit);
+
+  if (reviewId && !reviews[0]) {
+    throw new ApiError(400, "Invalid review Id");
+  }
 
   return res.json(
-    new ApiResponse(200, "Reviews got successfully", { reviews }),
+    new ApiResponse(200, "Reviews got successfully", { reviews })
   );
 });
 
@@ -101,7 +110,7 @@ export const updateReview = asyncHandler(async (req, res) => {
   await review[0].save();
 
   return res.json(
-    new ApiResponse(200, "Review Updated successfully", { review }),
+    new ApiResponse(200, "Review Updated successfully", { review })
   );
 });
 
@@ -118,7 +127,11 @@ export const deleteReview = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid product id");
   }
 
-  const review = await Review.find({ _id: reviewId, productId });
+  const review = await Review.find({
+    _id: reviewId,
+    productId,
+    userId: req.decodeToken._id,
+  });
   if (!review[0]) {
     throw new ApiError(400, "Invalid review Id");
   }

@@ -11,13 +11,15 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
   try {
     const decodeToken = jwt.verify(
       accessToken,
-      process.env.ACCESS_TOKEN_SECRET,
+      process.env.ACCESS_TOKEN_SECRET
     );
     const user = await User.find({ _id: decodeToken._id });
     if (!user[0]) {
       throw new ApiError(400, "User don't exist");
     }
     req.decodeToken = decodeToken;
+    req.role = user[0].role;
+    req.email = user[0].email;
     next();
   } catch (error) {
     if (error.name == "TokenExpiredError") {
