@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static("../public/temp"));
-app.use("/", (req, res) => {
+app.get("/", (req, res) => {
   res.send("HELLO THE SERVER IS RUNNING");
 });
 app.use("/api/v1/product", verifyJWT, productRouter);
