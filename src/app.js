@@ -17,6 +17,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("../public/temp"));
 
+app.use("/", (req, res) => {
+  res.send("Hello world!");
+});
+
 app.use("/api/v1/product", verifyJWT, productRouter);
 app.use("/api/v1/review", verifyJWT, reviewRouter);
 app.use("/api/v1/store", verifyJWT, storeRouter);
